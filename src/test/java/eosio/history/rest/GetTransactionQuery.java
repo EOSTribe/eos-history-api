@@ -28,6 +28,7 @@ public class GetTransactionQuery {
     @Before
 public void init() throws IOException {
 //        System.out.println(elasticSearchClient.getElasticsearchClient().ping(RequestOptions.DEFAULT));
+
 }
    @Test
    public void serverResposnse() throws IOException {
