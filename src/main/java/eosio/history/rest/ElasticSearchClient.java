@@ -27,9 +27,7 @@ public class ElasticSearchClient {
                         new HttpHost(properties.getEsHost2(), 9200, "http")));
     }
 
-public RestHighLevelClient getElasticsearchClient(){
+    public RestHighLevelClient getElasticsearchClient(){
         return this.elasticsearchClient;
     }
-
-
 }
