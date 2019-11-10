@@ -20,9 +20,12 @@ import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
+import java.util.concurrent.ThreadLocalRandom;
 
 
 @RestController
@@ -32,7 +35,7 @@ public class GetTransaction {
     private String get_actions_index ;
 
     private ElasticSearchClient elasticSearchClient;
-    private List AccessControlAllowHeaders = new ArrayList();
+    private final List AccessControlAllowHeaders = new ArrayList<>(Arrays.asList("*"));
 
 
     @Autowired
@@ -49,60 +52,67 @@ public class GetTransaction {
     @RequestMapping(method = RequestMethod.POST, consumes = "application/json", produces = "application/json")
     ResponseEntity<?> get_transaction(@RequestBody String id) throws IOException {
         AccessControlAllowHeaders.add("*");
-        CompletableFuture.supplyAsync(() -> getElasticTransactionHits(id))
-                    .thenApply(hits -> getElasticActions(hits))
-                    .thenAccept(json -> returnResul(json));
-    }
 
-    private ResponseEntity<String> returnResul(JSONObject result) {
+        JSONObject json =
+                CompletableFuture.supplyAsync(() -> getElasticTransactionHits(id))
+                .thenApplyAsync(hits -> getElasticActions(hits, id))
+                .join();
+
         HttpHeaders httpHeaders = new HttpHeaders();
         httpHeaders.setAccessControlAllowOrigin("*");
         httpHeaders.setAccessControlAllowHeaders(AccessControlAllowHeaders);
-        if(result != null) {
-            return new ResponseEntity<>(result.toString(), httpHeaders, HttpStatus.OK);
+        if(json != null) {
+            return new ResponseEntity<>(json.toString(), httpHeaders, HttpStatus.OK);
         } else {
             return new ResponseEntity<>("", httpHeaders, HttpStatus.NOT_FOUND);
         }
     }
 
-    private JSONObject getElasticActions(SearchHits hits) throws IOException {
+
+    private JSONObject getElasticActions(SearchHits hits, String id) {
         // If no hits - return null:
-        if (hits.getTotalHits().value == 0){
-            HttpHeaders httpHeaders = new HttpHeaders();
-            httpHeaders.setAccessControlAllowOrigin("*");
-            httpHeaders.setAccessControlAllowHeaders(AccessControlAllowHeaders);
+        if (hits == null || hits.getTotalHits().value == 0) {
             return null;
         }
-
         JSONObject jsonObjectTransaction = new JSONObject(hits.getAt(0).getSourceAsString());
-        List<JSONObject> jsonObjectList = new ArrayList<>();
-        QueryBuilder queryBuilder = new BoolQueryBuilder().filter(QueryBuilders.boolQuery().minimumShouldMatch(1).should(QueryBuilders.matchQuery("trx",id)));
-        SearchRequest searchRequest = new SearchRequest(get_actions_index);
-        SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();
-        searchSourceBuilder.query(queryBuilder);
-        searchRequest.source(searchSourceBuilder);
-        SearchResponse searchResponse = elasticSearchClient.getElasticsearchClient().search(searchRequest, RequestOptions.DEFAULT);
-        hits = searchResponse.getHits();
-        for (SearchHit hit : hits) {
-            JSONObject jsonObjectActions =new JSONObject(hit.getSourceAsString());
-            String data = jsonObjectActions.getJSONObject("act").getString("data");
-            JSONObject jsonObjectData = new JSONObject(data);
-            jsonObjectActions.getJSONObject("act").put("data", jsonObjectData);
-            jsonObjectActions.remove("trx");
-            jsonObjectList.add(jsonObjectActions);
+        try {
+            List<JSONObject> jsonObjectList = new ArrayList<>();
+            QueryBuilder queryBuilder = new BoolQueryBuilder().filter(QueryBuilders.boolQuery().minimumShouldMatch(1).should(QueryBuilders.matchQuery("trx", id)));
+            SearchRequest searchRequest = new SearchRequest(get_actions_index);
+            SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();
+            searchSourceBuilder.query(queryBuilder);
+            searchRequest.source(searchSourceBuilder);
+            SearchResponse searchResponse = elasticSearchClient.getElasticsearchClient().search(searchRequest, RequestOptions.DEFAULT);
+            hits = searchResponse.getHits();
+            for (SearchHit hit : hits) {
+                JSONObject jsonObjectActions = new JSONObject(hit.getSourceAsString());
+                String data = jsonObjectActions.getJSONObject("act").getString("data");
+                JSONObject jsonObjectData = new JSONObject(data);
+                jsonObjectActions.getJSONObject("act").put("data", jsonObjectData);
+                jsonObjectActions.remove("trx");
+                jsonObjectList.add(jsonObjectActions);
+            }
+            jsonObjectTransaction.getJSONObject("trace").put("action_traces", jsonObjectList);
+        } catch (IOException ex) {
+            System.err.println("Error: "+ex);
+            //TODO: use log4j to log error
         }
-        jsonObjectTransaction.getJSONObject("trace").put("action_traces",jsonObjectList);
-
         return jsonObjectTransaction;
     }
 
-    private SearchHits getElasticTransactionHits(String id) throws IOException {
-        QueryBuilder queryBuilder = new BoolQueryBuilder().filter(QueryBuilders.boolQuery().minimumShouldMatch(1).should(QueryBuilders.matchQuery("id",id)));
-        SearchRequest searchRequest = new SearchRequest(get_transaction_index);
-        SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();
-        searchSourceBuilder.query(queryBuilder);
-        searchRequest.source(searchSourceBuilder);
-        SearchResponse searchResponse = elasticSearchClient.getElasticsearchClient().search(searchRequest, RequestOptions.DEFAULT);
-        return searchResponse.getHits();
+    private SearchHits getElasticTransactionHits(String id) {
+        try {
+            QueryBuilder queryBuilder = new BoolQueryBuilder().filter(QueryBuilders.boolQuery().minimumShouldMatch(1).should(QueryBuilders.matchQuery("id", id)));
+            SearchRequest searchRequest = new SearchRequest(get_transaction_index);
+            SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();
+            searchSourceBuilder.query(queryBuilder);
+            searchRequest.source(searchSourceBuilder);
+            SearchResponse searchResponse = elasticSearchClient.getElasticsearchClient().search(searchRequest, RequestOptions.DEFAULT);
+            return searchResponse.getHits();
+        } catch (IOException ex) {
+            System.err.println("Error: "+ex);
+            //TODO: use log4j to log error
+            return null;
+        }
     }
 }
