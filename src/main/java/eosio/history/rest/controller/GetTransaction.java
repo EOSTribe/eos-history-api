@@ -22,6 +22,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
 
 @RestController
@@ -43,35 +44,44 @@ public class GetTransaction {
     public void setElasticSearchClient(ElasticSearchClient elasticSearchClient){
         this.elasticSearchClient = elasticSearchClient;
     }
+
     @CrossOrigin
     @RequestMapping(method = RequestMethod.POST, consumes = "application/json", produces = "application/json")
     ResponseEntity<?> get_transaction(@RequestBody String id) throws IOException {
-        List<JSONObject> jsonObjectList = new ArrayList<>();
         AccessControlAllowHeaders.add("*");
+        CompletableFuture.supplyAsync(() -> getElasticTransactionHits(id))
+                    .thenApply(hits -> getElasticActions(hits))
+                    .thenAccept(json -> returnResul(json));
+    }
 
-        QueryBuilder queryBuilder = new BoolQueryBuilder().filter(QueryBuilders.boolQuery().minimumShouldMatch(1).should(QueryBuilders.matchQuery("id",id)));
-        SearchRequest searchRequest = new SearchRequest(get_transaction_index);
+    private ResponseEntity<String> returnResul(JSONObject result) {
+        HttpHeaders httpHeaders = new HttpHeaders();
+        httpHeaders.setAccessControlAllowOrigin("*");
+        httpHeaders.setAccessControlAllowHeaders(AccessControlAllowHeaders);
+        if(result != null) {
+            return new ResponseEntity<>(result.toString(), httpHeaders, HttpStatus.OK);
+        } else {
+            return new ResponseEntity<>("", httpHeaders, HttpStatus.NOT_FOUND);
+        }
+    }
+
+    private JSONObject getElasticActions(SearchHits hits) throws IOException {
+        // If no hits - return null:
+        if (hits.getTotalHits().value == 0){
+            HttpHeaders httpHeaders = new HttpHeaders();
+            httpHeaders.setAccessControlAllowOrigin("*");
+            httpHeaders.setAccessControlAllowHeaders(AccessControlAllowHeaders);
+            return null;
+        }
+
+        JSONObject jsonObjectTransaction = new JSONObject(hits.getAt(0).getSourceAsString());
+        List<JSONObject> jsonObjectList = new ArrayList<>();
+        QueryBuilder queryBuilder = new BoolQueryBuilder().filter(QueryBuilders.boolQuery().minimumShouldMatch(1).should(QueryBuilders.matchQuery("trx",id)));
+        SearchRequest searchRequest = new SearchRequest(get_actions_index);
         SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();
         searchSourceBuilder.query(queryBuilder);
         searchRequest.source(searchSourceBuilder);
         SearchResponse searchResponse = elasticSearchClient.getElasticsearchClient().search(searchRequest, RequestOptions.DEFAULT);
-        SearchHits hits = searchResponse.getHits();
-        if (hits.getTotalHits().value == 0){
-            HttpHeaders httpHeaders = new HttpHeaders();
-
-            httpHeaders.setAccessControlAllowOrigin("*");
-            httpHeaders.setAccessControlAllowHeaders(AccessControlAllowHeaders);
-            return new ResponseEntity<>("", httpHeaders, HttpStatus.NOT_FOUND);
-        }
-
-        JSONObject jsonObjectTransaction = new JSONObject(hits.getAt(0).getSourceAsString());
-
-        queryBuilder = new BoolQueryBuilder().filter(QueryBuilders.boolQuery().minimumShouldMatch(1).should(QueryBuilders.matchQuery("trx",id)));
-        searchRequest = new SearchRequest(get_actions_index);
-        searchSourceBuilder = new SearchSourceBuilder();
-        searchSourceBuilder.query(queryBuilder);
-        searchRequest.source(searchSourceBuilder);
-        searchResponse = elasticSearchClient.getElasticsearchClient().search(searchRequest, RequestOptions.DEFAULT);
         hits = searchResponse.getHits();
         for (SearchHit hit : hits) {
             JSONObject jsonObjectActions =new JSONObject(hit.getSourceAsString());
@@ -83,9 +93,16 @@ public class GetTransaction {
         }
         jsonObjectTransaction.getJSONObject("trace").put("action_traces",jsonObjectList);
 
-        HttpHeaders httpHeaders = new HttpHeaders();
-        httpHeaders.setAccessControlAllowOrigin("*");
-        httpHeaders.setAccessControlAllowHeaders(AccessControlAllowHeaders);
-        return new ResponseEntity<>(jsonObjectTransaction.toString(), httpHeaders, HttpStatus.OK);
+        return jsonObjectTransaction;
+    }
+
+    private SearchHits getElasticTransactionHits(String id) throws IOException {
+        QueryBuilder queryBuilder = new BoolQueryBuilder().filter(QueryBuilders.boolQuery().minimumShouldMatch(1).should(QueryBuilders.matchQuery("id",id)));
+        SearchRequest searchRequest = new SearchRequest(get_transaction_index);
+        SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();
+        searchSourceBuilder.query(queryBuilder);
+        searchRequest.source(searchSourceBuilder);
+        SearchResponse searchResponse = elasticSearchClient.getElasticsearchClient().search(searchRequest, RequestOptions.DEFAULT);
+        return searchResponse.getHits();
     }
 }
