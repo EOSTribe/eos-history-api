@@ -5,6 +5,8 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.PropertySource;
 import org.springframework.stereotype.Component;
 
+import java.util.List;
+
 @Component
 @PropertySource("classpath:global.properties")
 @ConfigurationProperties
@@ -19,6 +21,26 @@ public class Properties {
     private String transactionIndex;
     @Value("${NEW_ACCOUNT_INDEX}")
     private String newAccountIndex;
+    @Value("${AccessControlAllowOrigin}")
+    private String accessControlAllowOrigin;
+    @Value("${AccessControlAllowHeaders}")
+    private String[] accessControlAllowHeaders;
+
+    public String getAccessControlAllowOrigin() {
+        return accessControlAllowOrigin;
+    }
+
+    public void setAccessControlAllowOrigin(String accessControlAllowOrigin) {
+        this.accessControlAllowOrigin = accessControlAllowOrigin;
+    }
+
+    public String[] getAccessControlAllowHeaders() {
+        return accessControlAllowHeaders;
+    }
+
+    public void setAccessControlAllowHeaders(String[] accessControlAllowHeaders) {
+        this.accessControlAllowHeaders = accessControlAllowHeaders;
+    }
 
     public String getEsHost1() {
         return esHost1;

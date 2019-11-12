@@ -23,6 +23,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -32,20 +33,19 @@ import java.util.concurrent.TimeUnit;
 @RequestMapping("v1/history/get_transaction")
 public class GetTransaction {
 
-    public GetTransaction() {
-        AccessControlAllowHeaders.add("*");
-    }
-
     private String get_transaction_index ;
     private String get_actions_index ;
 
     private ElasticSearchClient elasticSearchClient;
-    private List AccessControlAllowHeaders = new ArrayList();
+    private List accessControlAllowHeaders;
+    private String accessControlAllowOrigin;
 
     @Autowired
     public void setProperties(Properties properties){
         this.get_transaction_index = properties.getTransactionIndex();
         this.get_actions_index = properties.getActionsIndex();
+        accessControlAllowHeaders=Arrays.asList(properties.getAccessControlAllowHeaders());
+        accessControlAllowOrigin=properties.getAccessControlAllowOrigin();
     }
     @Autowired
     public void setElasticSearchClient(ElasticSearchClient elasticSearchClient){
@@ -56,8 +56,8 @@ public class GetTransaction {
     ResponseEntity<?> get_transaction(@RequestBody String id) throws IOException {
         List<JSONObject> jsonObjectList = new ArrayList<>();
         HttpHeaders httpHeaders = new HttpHeaders();
-        httpHeaders.setAccessControlAllowOrigin("*");
-        httpHeaders.setAccessControlAllowHeaders(AccessControlAllowHeaders);
+        httpHeaders.setAccessControlAllowOrigin(accessControlAllowOrigin);
+        httpHeaders.setAccessControlAllowHeaders(accessControlAllowHeaders);
 
         QueryBuilder transactionQueryBuilder = new BoolQueryBuilder().filter(QueryBuilders.boolQuery().minimumShouldMatch(1).should(QueryBuilders.matchQuery("id",id)));
         SearchRequest transactionSearchRequest = new SearchRequest(get_transaction_index);
