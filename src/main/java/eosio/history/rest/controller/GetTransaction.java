@@ -31,6 +31,11 @@ import java.util.concurrent.TimeUnit;
 @RestController
 @RequestMapping("v1/history/get_transaction")
 public class GetTransaction {
+
+    public GetTransaction() {
+        AccessControlAllowHeaders.add("*");
+    }
+
     private String get_transaction_index ;
     private String get_actions_index ;
 
@@ -50,7 +55,6 @@ public class GetTransaction {
     @RequestMapping(method = RequestMethod.POST, consumes = "application/json", produces = "application/json")
     ResponseEntity<?> get_transaction(@RequestBody String id) throws IOException {
         List<JSONObject> jsonObjectList = new ArrayList<>();
-        AccessControlAllowHeaders.add("*");
         HttpHeaders httpHeaders = new HttpHeaders();
         httpHeaders.setAccessControlAllowOrigin("*");
         httpHeaders.setAccessControlAllowHeaders(AccessControlAllowHeaders);
