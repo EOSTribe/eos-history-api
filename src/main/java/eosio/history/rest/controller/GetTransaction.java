@@ -2,9 +2,12 @@ package eosio.history.rest.controller;
 
 import eosio.history.rest.ElasticSearchClient;
 import eosio.history.rest.config.Properties;
+import org.elasticsearch.action.search.MultiSearchRequest;
+import org.elasticsearch.action.search.MultiSearchResponse;
 import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.client.RequestOptions;
+import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.index.query.BoolQueryBuilder;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
@@ -22,6 +25,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 
 @RestController
@@ -32,7 +36,6 @@ public class GetTransaction {
 
     private ElasticSearchClient elasticSearchClient;
     private List AccessControlAllowHeaders = new ArrayList();
-
 
     @Autowired
     public void setProperties(Properties properties){
@@ -48,44 +51,47 @@ public class GetTransaction {
     ResponseEntity<?> get_transaction(@RequestBody String id) throws IOException {
         List<JSONObject> jsonObjectList = new ArrayList<>();
         AccessControlAllowHeaders.add("*");
+        HttpHeaders httpHeaders = new HttpHeaders();
+        httpHeaders.setAccessControlAllowOrigin("*");
+        httpHeaders.setAccessControlAllowHeaders(AccessControlAllowHeaders);
 
-        QueryBuilder queryBuilder = new BoolQueryBuilder().filter(QueryBuilders.boolQuery().minimumShouldMatch(1).should(QueryBuilders.matchQuery("id",id)));
-        SearchRequest searchRequest = new SearchRequest(get_transaction_index);
-        SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();
-        searchSourceBuilder.query(queryBuilder);
-        searchRequest.source(searchSourceBuilder);
-        SearchResponse searchResponse = elasticSearchClient.getElasticsearchClient().search(searchRequest, RequestOptions.DEFAULT);
-        SearchHits hits = searchResponse.getHits();
-        if (hits.getTotalHits().value == 0){
-            HttpHeaders httpHeaders = new HttpHeaders();
+        QueryBuilder transactionQueryBuilder = new BoolQueryBuilder().filter(QueryBuilders.boolQuery().minimumShouldMatch(1).should(QueryBuilders.matchQuery("id",id)));
+        SearchRequest transactionSearchRequest = new SearchRequest(get_transaction_index);
+        SearchSourceBuilder transactionSearchSourceBuilder = new SearchSourceBuilder();
+        transactionSearchSourceBuilder.query(transactionQueryBuilder);
+        transactionSearchRequest.source(transactionSearchSourceBuilder);
 
-            httpHeaders.setAccessControlAllowOrigin("*");
-            httpHeaders.setAccessControlAllowHeaders(AccessControlAllowHeaders);
+        QueryBuilder actionsQueryBuilder = new BoolQueryBuilder().filter(QueryBuilders.boolQuery().minimumShouldMatch(1).should(QueryBuilders.matchQuery("trx",id)));
+        SearchRequest actionsSearchRequest = new SearchRequest(get_actions_index);
+        SearchSourceBuilder actionsSearchSourceBuilder = new SearchSourceBuilder();
+        actionsSearchSourceBuilder.size(90);
+        actionsSearchSourceBuilder.timeout(new TimeValue(30, TimeUnit.SECONDS));
+        actionsSearchSourceBuilder.query(actionsQueryBuilder);
+        actionsSearchRequest.source(actionsSearchSourceBuilder);
+
+        MultiSearchRequest multiSearchRequest  = new MultiSearchRequest().
+                add(transactionSearchRequest).
+                add(actionsSearchRequest);
+        MultiSearchResponse.Item[] multiSearchResponse = elasticSearchClient.getElasticsearchClient().msearch(multiSearchRequest, RequestOptions.DEFAULT).getResponses();
+
+        if ( multiSearchResponse[0].getResponse().getHits().getTotalHits().value == 0){
+
             return new ResponseEntity<>("", httpHeaders, HttpStatus.NOT_FOUND);
         }
 
-        JSONObject jsonObjectTransaction = new JSONObject(hits.getAt(0).getSourceAsString());
+        JSONObject jsonObjectTransaction = new JSONObject(multiSearchResponse[0].getResponse().getHits().getAt(0).getSourceAsString());
 
-        queryBuilder = new BoolQueryBuilder().filter(QueryBuilders.boolQuery().minimumShouldMatch(1).should(QueryBuilders.matchQuery("trx",id)));
-        searchRequest = new SearchRequest(get_actions_index);
-        searchSourceBuilder = new SearchSourceBuilder();
-        searchSourceBuilder.query(queryBuilder);
-        searchRequest.source(searchSourceBuilder);
-        searchResponse = elasticSearchClient.getElasticsearchClient().search(searchRequest, RequestOptions.DEFAULT);
-        hits = searchResponse.getHits();
-        for (SearchHit hit : hits) {
-            JSONObject jsonObjectActions =new JSONObject(hit.getSourceAsString());
+        for (SearchHit hit : multiSearchResponse[1].getResponse().getHits()) {
+            JSONObject jsonObjectActions = new JSONObject(hit.getSourceAsString());
             String data = jsonObjectActions.getJSONObject("act").getString("data");
             JSONObject jsonObjectData = new JSONObject(data);
             jsonObjectActions.getJSONObject("act").put("data", jsonObjectData);
             jsonObjectActions.remove("trx");
             jsonObjectList.add(jsonObjectActions);
         }
+
         jsonObjectTransaction.getJSONObject("trace").put("action_traces",jsonObjectList);
 
-        HttpHeaders httpHeaders = new HttpHeaders();
-        httpHeaders.setAccessControlAllowOrigin("*");
-        httpHeaders.setAccessControlAllowHeaders(AccessControlAllowHeaders);
         return new ResponseEntity<>(jsonObjectTransaction.toString(), httpHeaders, HttpStatus.OK);
     }
 }
