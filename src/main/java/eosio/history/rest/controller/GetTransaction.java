@@ -106,6 +106,7 @@ public class GetTransaction {
 
         jsonObjectTransaction.getJSONObject("trace").put("action_traces",jsonObjectList);
         logger.info("id: "+transaction.getId()+" status: "+HttpStatus.OK.toString());
+
         return new ResponseEntity<>(jsonObjectTransaction.toString(), httpHeaders, HttpStatus.OK);
     }
 }
