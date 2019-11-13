@@ -18,7 +18,7 @@ apply plugin: 'org.springframework.boot'
 apply plugin: 'io.spring.dependency-management'
 
 bootJar {
-    baseName = 'spectrum'
+    baseName = 'eosio-history-rest-api'
     version = '0.1.4'
 }
 sourceCompatibility = 1.8

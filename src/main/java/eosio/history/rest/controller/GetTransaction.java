@@ -1,6 +1,7 @@
 package eosio.history.rest.controller;
 
 import eosio.history.rest.ElasticSearchClient;
+import eosio.history.rest.Transaction;
 import eosio.history.rest.config.Properties;
 import org.elasticsearch.action.search.MultiSearchRequest;
 import org.elasticsearch.action.search.MultiSearchResponse;
@@ -15,6 +16,8 @@ import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.SearchHits;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.json.JSONObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -24,7 +27,6 @@ import org.springframework.web.bind.annotation.*;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
@@ -32,9 +34,10 @@ import java.util.concurrent.TimeUnit;
 @RestController
 @RequestMapping("v1/history/get_transaction")
 public class GetTransaction {
+    private static final transient Logger logger = LoggerFactory.getLogger(GetTransaction.class);
 
-    private String get_transaction_index ;
-    private String get_actions_index ;
+    private String get_transaction_index;
+    private String get_actions_index;
 
     private ElasticSearchClient elasticSearchClient;
     private List accessControlAllowHeaders;
@@ -51,21 +54,27 @@ public class GetTransaction {
     public void setElasticSearchClient(ElasticSearchClient elasticSearchClient){
         this.elasticSearchClient = elasticSearchClient;
     }
+
     @CrossOrigin
     @RequestMapping(method = RequestMethod.POST, consumes = "application/json", produces = "application/json")
-    ResponseEntity<?> get_transaction(@RequestBody String id) throws IOException {
+    ResponseEntity<?> get_transaction(@RequestBody Transaction transaction) throws IOException {
         List<JSONObject> jsonObjectList = new ArrayList<>();
         HttpHeaders httpHeaders = new HttpHeaders();
         httpHeaders.setAccessControlAllowOrigin(accessControlAllowOrigin);
         httpHeaders.setAccessControlAllowHeaders(accessControlAllowHeaders);
 
-        QueryBuilder transactionQueryBuilder = new BoolQueryBuilder().filter(QueryBuilders.boolQuery().minimumShouldMatch(1).should(QueryBuilders.matchQuery("id",id)));
+        if (transaction.getId().length() != 64){
+            logger.info("id: "+transaction.getId()+" status: "+HttpStatus.BAD_REQUEST.toString());
+            return new ResponseEntity<>("", httpHeaders, HttpStatus.BAD_REQUEST);
+        }
+
+        QueryBuilder transactionQueryBuilder = new BoolQueryBuilder().filter(QueryBuilders.boolQuery().minimumShouldMatch(1).should(QueryBuilders.matchQuery("id",transaction.getId())));
         SearchRequest transactionSearchRequest = new SearchRequest(get_transaction_index);
         SearchSourceBuilder transactionSearchSourceBuilder = new SearchSourceBuilder();
         transactionSearchSourceBuilder.query(transactionQueryBuilder);
         transactionSearchRequest.source(transactionSearchSourceBuilder);
 
-        QueryBuilder actionsQueryBuilder = new BoolQueryBuilder().filter(QueryBuilders.boolQuery().minimumShouldMatch(1).should(QueryBuilders.matchQuery("trx",id)));
+        QueryBuilder actionsQueryBuilder = new BoolQueryBuilder().filter(QueryBuilders.boolQuery().minimumShouldMatch(1).should(QueryBuilders.matchQuery("trx",transaction.getId())));
         SearchRequest actionsSearchRequest = new SearchRequest(get_actions_index);
         SearchSourceBuilder actionsSearchSourceBuilder = new SearchSourceBuilder();
         actionsSearchSourceBuilder.size(90);
@@ -79,6 +88,7 @@ public class GetTransaction {
         MultiSearchResponse.Item[] multiSearchResponse = elasticSearchClient.getElasticsearchClient().msearch(multiSearchRequest, RequestOptions.DEFAULT).getResponses();
 
         if ( multiSearchResponse[0].getResponse().getHits().getTotalHits().value == 0){
+            logger.info("id: "+transaction.getId()+" status: "+HttpStatus.NOT_FOUND.toString());
 
             return new ResponseEntity<>("", httpHeaders, HttpStatus.NOT_FOUND);
         }
@@ -95,7 +105,7 @@ public class GetTransaction {
         }
 
         jsonObjectTransaction.getJSONObject("trace").put("action_traces",jsonObjectList);
-
+        logger.info("id: "+transaction.getId()+" status: "+HttpStatus.OK.toString());
         return new ResponseEntity<>(jsonObjectTransaction.toString(), httpHeaders, HttpStatus.OK);
     }
 }
