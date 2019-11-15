@@ -8,6 +8,15 @@ public class Actions {
       String sort;
       String after;
       String before;
+      String last;
+
+    public String getLast() {
+        return last;
+    }
+
+    public void setLast(String last) {
+        this.last = last;
+    }
 
     public String getAccount_name() {
         return account_name;
@@ -63,5 +72,18 @@ public class Actions {
 
     public void setBefore(String before) {
         this.before = before;
+    }
+
+    @Override
+    public String toString() {
+        return "Actions{" +
+                "account_name='" + account_name + '\'' +
+                ", pos=" + pos +
+                ", offset=" + offset +
+                ", filter='" + filter + '\'' +
+                ", sort='" + sort + '\'' +
+                ", after='" + after + '\'' +
+                ", before='" + before + '\'' +
+                '}';
     }
 }

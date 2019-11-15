@@ -1,9 +1,13 @@
 package eosio.history.rest.controller;
 
+import com.google.gson.JsonObject;
 import eosio.history.rest.Actions;
 import eosio.history.rest.ElasticSearchClient;
 import eosio.history.rest.Transaction;
 import eosio.history.rest.config.Properties;
+import org.elasticsearch.ElasticsearchException;
+import org.elasticsearch.ElasticsearchStatusException;
+import org.elasticsearch.ElasticsearchTimeoutException;
 import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.client.RequestOptions;
@@ -56,11 +60,18 @@ public class GetActions {
     @CrossOrigin
     @RequestMapping(method = RequestMethod.POST, consumes = "application/json", produces = "application/json")
     ResponseEntity<?> get_actions(@RequestBody Actions actions) throws IOException {
+        logger.info("Reuqest: "+actions.toString());
+        int size = 1000;
+        int from = 0;
+        String lte = "now";
+        String gte = "0";
+        SortOrder sortOrder = SortOrder.ASC;
         JSONArray jsons = new JSONArray();
+        JSONObject response = new JSONObject();
+        SearchResponse searchResponse = null;
         HttpHeaders httpHeaders = new HttpHeaders();
         httpHeaders.setAccessControlAllowOrigin(accessControlAllowOrigin);
         httpHeaders.setAccessControlAllowHeaders(accessControlAllowHeaders);
-
 
         String account_name = actions.getAccount_name();
         int pos = actions.getPos();
@@ -79,24 +90,60 @@ public class GetActions {
         SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();
 
         if (pos < 0) {
-            searchSourceBuilder.sort("receipt.global_sequence", SortOrder.DESC);
-            searchSourceBuilder.from(Math.abs(pos)-1);
-            searchSourceBuilder.size(Math.abs(offset));
-        }else {
-            searchSourceBuilder.sort("receipt.global_sequence", SortOrder.ASC);
+            if (offset < 0){
+                from = Math.abs(pos)-1;
+                size = Math.abs(offset);
+                sortOrder = SortOrder.DESC;
+            }
+        }else if (pos == 0 & offset ==0){
+            from = 0;
+            size = 1000;
+        } else {
+            if (offset < 0) {
+                from = 0;
+                size = pos + 1;
+            } else {
+                from = pos;
+                size = offset + 1;
+            }
+        }
+        if (actions.getAfter() != null){
+            gte = actions.getAfter();
         }
 
-//                        QueryBuilders.matchQuery("receipt.receiver",account_name)
-//                        QueryBuilders.matchQuery("receipt.receiver",account_name))
+        if (actions.getBefore()!=null){
+            lte = actions.getBefore();
+        }
+
+        if (actions.getLast()!=null){
+            gte="now-"+actions.getLast();
+            sortOrder = SortOrder.DESC;
+        }
 
 
-//        QueryBuilders.boolQuery().minimumShouldMatch(1).filter().add(QueryBuilders.boolQuery().minimumShouldMatch(1).should(QueryBuilders.matchQuery("receipt.receiver",account_name)));
+        ((BoolQueryBuilder) queryBuilder).filter().add(QueryBuilders.rangeQuery("block_timestamp").gte(gte).lte(lte));
 
-
+        searchSourceBuilder.sort("receipt.global_sequence", sortOrder);
+        searchSourceBuilder.from(from);
+        searchSourceBuilder.size(size);
         searchSourceBuilder.query(queryBuilder);
         searchRequest.source(searchSourceBuilder);
-        SearchResponse searchResponse = elasticSearchClient.getElasticsearchClient().search(searchRequest, RequestOptions.DEFAULT);
+        try {
+            searchResponse = elasticSearchClient.getElasticsearchClient().search(searchRequest, RequestOptions.DEFAULT);
+        } catch (ElasticsearchTimeoutException e){
+            return new ResponseEntity<>(e.getDetailedMessage(), httpHeaders, HttpStatus.REQUEST_TIMEOUT);
+        }
+        catch (ElasticsearchException e){
+            return new ResponseEntity<>(e.getDetailedMessage(), httpHeaders, HttpStatus.BAD_REQUEST);
+        }
         SearchHits hits = searchResponse.getHits();
+
+        if (hits.getTotalHits().value == 0){
+            logger.info("Reuqest: "+actions.toString()+" response: "+HttpStatus.NOT_FOUND);
+            return new ResponseEntity<>("", httpHeaders, HttpStatus.NOT_FOUND);
+        }
+
+        searchResponse.getTook();
 
         for (SearchHit hit : hits) {
             JSONObject jsonObjectActions = new JSONObject(hit.getSourceAsString());
@@ -107,7 +154,9 @@ public class GetActions {
             jsons.put(jsonObjectActions);
         }
 
-        logger.info(hits.getTotalHits().toString());
-        return new ResponseEntity<>(jsons.toString(), httpHeaders, HttpStatus.OK);
+        response.put("query_time", searchResponse.getTook().toString());
+        response.put("actions", jsons);
+        logger.info("Reuqest: "+actions.toString()+" response: "+HttpStatus.OK +" query_time: "+searchResponse.getTook().toString()+" actions: "+jsons.length());
+        return new ResponseEntity<>(response.toString(), httpHeaders, HttpStatus.OK);
     }
 }
