@@ -21,6 +21,7 @@ import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.elasticsearch.search.sort.FieldSortBuilder;
 import org.elasticsearch.search.sort.SortOrder;
 import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -142,10 +143,16 @@ public class GetActions {
                 return new ResponseEntity<>("", httpHeaders, HttpStatus.NOT_FOUND);
             }
             for (SearchHit hit : hits) {
+                JSONObject jsonObjectData;
                 JSONObject jsonObjectActions = new JSONObject(hit.getSourceAsString());
                 String data = jsonObjectActions.getJSONObject("act").getString("data");
-                JSONObject jsonObjectData = new JSONObject(data);
-                jsonObjectActions.getJSONObject("act").put("data", jsonObjectData);
+                try {
+                    jsonObjectData = new JSONObject(data);
+                    jsonObjectActions.getJSONObject("act").put("data", jsonObjectData);
+                }catch (JSONException jse){
+                    logger.error(jse.getMessage());
+                }
+
                 jsonObjectActions.remove("trx");
                 jsons.put(jsonObjectActions);
             }
