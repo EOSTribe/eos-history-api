@@ -182,6 +182,8 @@ public class GetActions {
                 try {
                     searchHitsList = Arrays.asList(searchHits).subList(Math.abs(pagesSize*(scrollPage-1)-from), Math.abs(pagesSize*(scrollPage-1)-from)+size);
                     clearScrollRequest(scrollId);
+                    logger.info(" query_time: "+searchResponse.getTook().toString()+" actions: "+searchHitsList.size());
+
                     return hitsProcessing(searchHitsList);
                 } catch (IndexOutOfBoundsException exc){
                     searchHitsList = Arrays.asList(searchHits).subList(Math.abs(pagesSize*(scrollPage-1)-from), searchHits.length-1);
