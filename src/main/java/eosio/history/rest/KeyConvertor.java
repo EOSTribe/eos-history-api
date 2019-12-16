@@ -29,9 +29,6 @@ public class KeyConvertor {
         d.doFinal (o, 0);
         Hex.encode (o, out);
 
-
-
-
     }
 
 /**
