@@ -26,7 +26,6 @@ import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -47,15 +46,13 @@ public class GetActions {
     private String get_actions_index;
 
     private ElasticSearchClient elasticSearchClient;
-    private List accessControlAllowHeaders;
-    private String accessControlAllowOrigin;
+
 
     @Autowired
     public void setProperties(Properties properties){
         this.get_transaction_index = properties.getTransactionIndex();
         this.get_actions_index = properties.getActionsIndex();
-        accessControlAllowHeaders=Arrays.asList(properties.getAccessControlAllowHeaders());
-        accessControlAllowOrigin=properties.getAccessControlAllowOrigin();
+
     }
     @Autowired
     public void setElasticSearchClient(ElasticSearchClient elasticSearchClient){
@@ -71,9 +68,6 @@ public class GetActions {
         String gte = "0";
         SortOrder sortOrder = SortOrder.ASC;
         JSONObject response;
-        HttpHeaders httpHeaders = new HttpHeaders();
-        httpHeaders.setAccessControlAllowOrigin(accessControlAllowOrigin);
-        httpHeaders.setAccessControlAllowHeaders(accessControlAllowHeaders);
 
         String account_name = actions.getAccount_name();
         int pos = actions.getPos();
@@ -130,7 +124,7 @@ public class GetActions {
         } else {
             response = regularReuqest(searchSourceBuilder, actions);
         }
-        return new ResponseEntity<>(response.toString(), httpHeaders, HttpStatus.OK);
+        return new ResponseEntity<>(response.toString(), HttpStatus.OK);
     }
 
     private JSONObject scrollRequest(SearchSourceBuilder searchSourceBuilder, int from, int size, Actions actions) throws IOException, ElasticsearchException {
