@@ -1,5 +1,7 @@
 package eosio.history.rest;
 
+import javax.validation.constraints.NotNull;
+
 public class Key {
 
     private String key;
