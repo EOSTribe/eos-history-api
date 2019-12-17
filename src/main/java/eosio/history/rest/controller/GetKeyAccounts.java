@@ -39,7 +39,6 @@ import java.util.Set;
 public class GetKeyAccounts {
     private static final transient Logger logger = LoggerFactory.getLogger(GetKeyAccounts.class);
 
-
     private KeyConvertor keyConvertor;
     private ElasticSearchClient elasticSearchClient;
     private String get_key_accounts_index;
@@ -60,6 +59,7 @@ public class GetKeyAccounts {
     @CrossOrigin
     @RequestMapping(method = RequestMethod.POST, consumes = "application/json", produces = "application/json")
     ResponseEntity<?> get_actions(@RequestBody Key key) throws IOException, EOSFormatterError {
+        logger.info("Reuqest: "+key.getKey());
         Set accounts = new HashSet();
         JSONObject response = new JSONObject();
         String publicKeyK1;
@@ -78,6 +78,7 @@ public class GetKeyAccounts {
         SearchHits searchHits = searchResponse.getHits();
         response.put("query_time", searchResponse.getTook().getMillis()+"ms");
         if (searchHits.getTotalHits().value == 0){
+            logger.info("Reuqest: "+key.getKey()+" response: "+HttpStatus.NOT_FOUND +" query_time: "+searchResponse.getTook().millis()+"ms ");
             return new ResponseEntity<>(response.toString(), HttpStatus.NOT_FOUND);
         }
         for (SearchHit hit : searchHits) {
@@ -91,7 +92,7 @@ public class GetKeyAccounts {
             }
         }
         response.put("accounts",accounts);
+        logger.info("Reuqest: "+key.getKey()+" response: "+HttpStatus.OK +" query_time: "+searchResponse.getTook().millis()+"ms ");
         return new ResponseEntity<>(response.toString(), HttpStatus.OK);
     }
-
 }

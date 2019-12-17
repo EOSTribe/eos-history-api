@@ -3,7 +3,6 @@ package eosio.history.rest.controller;
 import com.google.gson.JsonObject;
 import eosio.history.rest.Actions;
 import eosio.history.rest.ElasticSearchClient;
-import eosio.history.rest.Transaction;
 import eosio.history.rest.config.Properties;
 import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.ElasticsearchStatusException;
@@ -31,22 +30,16 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
-import java.sql.Array;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
 @RestController
 @RequestMapping("/v1/history/get_actions")
 public class GetActions {
-
     private static final transient Logger logger = LoggerFactory.getLogger(GetActions.class);
-
     private String get_transaction_index;
     private String get_actions_index;
-
     private ElasticSearchClient elasticSearchClient;
-
 
     @Autowired
     public void setProperties(Properties properties){
@@ -83,7 +76,6 @@ public class GetActions {
                                 QueryBuilders.matchQuery("act.authorization.actor",account_name))
                 ));
         SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();
-
 
         if (pos == 0 & offset ==0){
             from = 0;
