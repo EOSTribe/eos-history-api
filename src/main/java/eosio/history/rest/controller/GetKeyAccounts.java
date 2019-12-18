@@ -82,13 +82,26 @@ public class GetKeyAccounts {
             return new ResponseEntity<>(response.toString(), HttpStatus.NOT_FOUND);
         }
         for (SearchHit hit : searchHits) {
-            try {
+            JSONObject jsonObjectData = null;
             JSONObject jsonObjectActions = new JSONObject(hit.getSourceAsString());
-            String data = jsonObjectActions.getJSONObject("act").getString("data");
-            JSONObject jsonObjectData = new JSONObject(data);
-            accounts.add(jsonObjectData.getString("name"));
+            try {
+                String data = jsonObjectActions.getJSONObject("act").getString("data");
+                jsonObjectData = new JSONObject(data);
             }catch (JSONException jse){
                 logger.error(jse.getMessage());
+            }
+
+            try {
+                accounts.add(jsonObjectData.getString("name"));
+
+            }catch (JSONException jse){
+                logger.warn(jse.getMessage());
+            }
+            try {
+
+                accounts.add(jsonObjectData.getString("account"));
+            }catch (JSONException jse){
+                logger.warn(jse.getMessage());
             }
         }
         response.put("accounts",accounts);
