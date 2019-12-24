@@ -31,7 +31,6 @@ repositories {
 
 }
 
-
 dependencies {
     implementation 'one.block:eosiojava:0.1.0'
     compile group: 'org.json', name: 'json', version: '20180813'
@@ -41,7 +40,6 @@ dependencies {
     compile group: 'org.elasticsearch.client', name: 'elasticsearch-rest-high-level-client', version: '7.4.0'
     compile group: 'org.elasticsearch.client', name: 'elasticsearch-rest-client', version: '7.4.0'
     compile group: 'org.elasticsearch.plugin', name: 'transport-netty4-client', version: '7.4.0'
-//    compile group: 'org.bitcoinj', name: 'bitcoinj-core', version: '0.15.6'
     compile 'ch.qos.logback:logback-classic:1.2.2'
     compile("org.springframework.boot:spring-boot-starter-websocket")
     compile "org.springframework.boot:spring-boot-configuration-processor"
