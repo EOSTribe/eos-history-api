@@ -90,6 +90,7 @@ public class GetControlledAcctounts {
                 logger.warn(jse.getMessage());
             }
         }
+
 //        response.put("accounts",accounts);
 //        logger.info("Reuqest: "+key.getKey()+" response: "+HttpStatus.OK +" query_time: "+searchResponse.getTook().millis()+"ms ");
         return new ResponseEntity<>(response.toString(), HttpStatus.OK);
