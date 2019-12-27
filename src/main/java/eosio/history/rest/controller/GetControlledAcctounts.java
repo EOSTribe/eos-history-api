@@ -48,7 +48,6 @@ public class GetControlledAcctounts {
     public void setElasticSearchClient(ElasticSearchClient elasticSearchClient){
         this.elasticSearchClient = elasticSearchClient;
     }
-
     @CrossOrigin
     @RequestMapping(method = RequestMethod.POST, consumes = "application/json", produces = "application/json")
     ResponseEntity<?> get_actions(@RequestBody Account account) throws IOException, EOSFormatterError {
