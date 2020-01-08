@@ -19,8 +19,10 @@ public class Properties {
     private String actionsIndex;
     @Value("${TRANSACTION_INDEX}")
     private String transactionIndex;
-    @Value("${NEW_ACCOUNT_INDEX}")
-    private String newAccountIndex;
+    @Value("${TRANSFER_ACTIONS_INDEX}")
+    private String transferActionsIndex;
+    @Value("${ACCOUNT_ACTIONS_INDEX}")
+    private String accountActionsIndex;
     @Value("${AccessControlAllowOrigin}")
     private String accessControlAllowOrigin;
     @Value("${AccessControlAllowHeaders}")
@@ -74,11 +76,19 @@ public class Properties {
         this.transactionIndex = transactionIndex;
     }
 
-    public String getNewAccountIndex() {
-        return newAccountIndex;
+    public String getTransferActionsIndex() {
+        return transferActionsIndex;
     }
 
-    public void setNewAccountIndex(String newAccountIndex) {
-        this.newAccountIndex = newAccountIndex;
+    public void setTransferActionsIndex(String transferActionsIndex) {
+        this.transferActionsIndex = transferActionsIndex;
+    }
+
+    public String getAccountActionsIndex() {
+        return accountActionsIndex;
+    }
+
+    public void setAccountActionsIndex(String accountActionsIndex) {
+        this.accountActionsIndex = accountActionsIndex;
     }
 }

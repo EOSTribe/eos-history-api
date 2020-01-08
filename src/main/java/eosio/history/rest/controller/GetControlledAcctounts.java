@@ -42,7 +42,7 @@ public class GetControlledAcctounts {
 
     @Autowired
     public void setProperties(Properties properties){
-        this.get_key_accounts_index = properties.getNewAccountIndex();
+        this.get_key_accounts_index = properties.getAccountActionsIndex();
     }
     @Autowired
     public void setElasticSearchClient(ElasticSearchClient elasticSearchClient){
@@ -90,6 +90,7 @@ public class GetControlledAcctounts {
                 logger.warn(jse.getMessage());
             }
         }
+
 //        response.put("accounts",accounts);
 //        logger.info("Reuqest: "+key.getKey()+" response: "+HttpStatus.OK +" query_time: "+searchResponse.getTook().millis()+"ms ");
         return new ResponseEntity<>(response.toString(), HttpStatus.OK);
