@@ -1,14 +1,23 @@
 package eosio.history.rest;
 
 public class Actions {
-      String account_name;
-      int pos;
-      int offset;
-      String filter;
-      String sort;
-      String after;
-      String before;
-      String last;
+      private String account_name;
+    private int pos;
+    private int offset;
+    private String filter;
+    private String sort;
+    private String after;
+    private String before;
+    private String last;
+    private String action;
+
+    public String getAction() {
+        return action;
+    }
+
+    public void setAction(String action) {
+        this.action = action;
+    }
 
     public String getLast() {
         return last;
@@ -84,6 +93,8 @@ public class Actions {
                 ", sort='" + sort + '\'' +
                 ", after='" + after + '\'' +
                 ", before='" + before + '\'' +
+                ", last='" + last + '\'' +
+                ", action='" + action + '\'' +
                 '}';
     }
 }

@@ -1,0 +1,15 @@
+version: '3.0'
+services:
+  eosio-history-api:
+    build: ./history-api
+    logging:
+      driver: journald
+    environment:
+      - ES_HOST1=api.eostribe.io
+      - ES_HOST2=api.eostribe.io
+      - ACTIONS_INDEX=telos-mainnet-actions*
+      - TRANSACTION_INDEX=telos-mainnet-transaction*
+      - ACCOUNT_ACTIONS_INDEX=telos-mainnet-account-actions*
+      - TRANSFER_ACTIONS_INDEX=telos-mainnet-transfer-actions*
+    ports:
+      - "127.0.0.1:8410:8080"

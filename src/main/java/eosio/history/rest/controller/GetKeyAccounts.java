@@ -46,7 +46,7 @@ public class GetKeyAccounts {
     }
     @Autowired
     public void setProperties(Properties properties){
-        this.get_key_accounts_index = properties.getNewAccountIndex();
+        this.get_key_accounts_index = properties.getAccountActionsIndex();
     }
     @Autowired
     public void setElasticSearchClient(ElasticSearchClient elasticSearchClient){
