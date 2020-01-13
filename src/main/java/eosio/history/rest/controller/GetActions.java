@@ -113,6 +113,9 @@ public class GetActions {
         } else {
             response = regularReuqest(searchSourceBuilder, actions);
         }
+        if (response.getJSONArray("actions").length()== 0){
+            return new ResponseEntity<>(response.toString(), HttpStatus.NOT_FOUND);
+        }
         return new ResponseEntity<>(response.toString(), HttpStatus.OK);
     }
 
