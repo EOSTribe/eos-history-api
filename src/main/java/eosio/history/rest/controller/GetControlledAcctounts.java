@@ -1,7 +1,6 @@
 package eosio.history.rest.controller;
 
 
-import com.google.gson.JsonObject;
 import eosio.history.rest.Account;
 import eosio.history.rest.ElasticSearchClient;
 import eosio.history.rest.Key;
@@ -12,7 +11,7 @@ import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.index.query.BoolQueryBuilder;
-import org.elasticsearch.index.query.MultiMatchQueryBuilder;
+
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.index.search.MultiMatchQuery;
@@ -75,7 +74,6 @@ public class GetControlledAcctounts {
             response.put("controlled_accounts",new JSONArray());
             return new ResponseEntity<>(response.toString(), HttpStatus.NOT_FOUND);
         }
-
         for (SearchHit hit : searchHits) {
             JSONObject jsonObjectActions = new JSONObject(hit.getSourceAsString());
             try {
@@ -84,9 +82,7 @@ public class GetControlledAcctounts {
             }catch (JSONException jse){
                 logger.error(jse.getMessage());
             }
-
         }
-
         response.put("controlled_accounts",controlledAccounts);
         logger.info("Reuqest: "+account.getControlling_account()+" response: "+HttpStatus.OK +" query_time: "+searchResponse.getTook().millis()+"ms");
         return new ResponseEntity<>(response.toString(), HttpStatus.OK);
