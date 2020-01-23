@@ -1,4 +1,4 @@
-package eosio.history.rest;
+package eosio.history.rest.service;
 
 import java.util.Objects;
 

@@ -1,7 +1,7 @@
 package eosio.history.rest.controller;
 
 import eosio.history.rest.Actions;
-import eosio.history.rest.TransferDeduplicator;
+import eosio.history.rest.service.TransferDeduplicator;
 import eosio.history.rest.ElasticSearchClient;
 import eosio.history.rest.config.Properties;
 import org.elasticsearch.ElasticsearchException;

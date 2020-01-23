@@ -3,8 +3,6 @@ package eosio.history.rest.controller;
 
 import eosio.history.rest.Account;
 import eosio.history.rest.ElasticSearchClient;
-import eosio.history.rest.Key;
-import eosio.history.rest.KeyConvertor;
 import eosio.history.rest.config.Properties;
 import one.block.eosiojava.error.utilities.EOSFormatterError;
 import org.elasticsearch.action.search.SearchRequest;
@@ -14,7 +12,6 @@ import org.elasticsearch.index.query.BoolQueryBuilder;
 
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
-import org.elasticsearch.index.search.MultiMatchQuery;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.SearchHits;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
@@ -29,8 +26,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
-import java.util.HashSet;
-import java.util.Set;
 
 @RestController
 @RequestMapping("/v1/history/get_controlled_accounts")
