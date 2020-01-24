@@ -18,6 +18,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -35,39 +36,48 @@ public class GetTransaction {
 
     private String get_transaction_index;
     private String get_actions_index;
-
     private ElasticSearchClient elasticSearchClient;
-
 
     @Autowired
     public void setProperties(Properties properties){
         this.get_transaction_index = properties.getTransactionIndex();
         this.get_actions_index = properties.getActionsIndex();
-
     }
     @Autowired
     public void setElasticSearchClient(ElasticSearchClient elasticSearchClient){
         this.elasticSearchClient = elasticSearchClient;
     }
+    @CrossOrigin
+    @RequestMapping(method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
+    ResponseEntity<?> get_transaction( @RequestParam("id") String id) throws IOException {
+        if (id.length() != 64){
+            logger.info("id: "+id+" status: "+HttpStatus.BAD_REQUEST.toString());
+            return new ResponseEntity<>("", HttpStatus.BAD_REQUEST);
+        }
+        return response(id);
+    }
 
     @CrossOrigin
-    @RequestMapping(method = RequestMethod.POST, consumes = "application/json", produces = "application/json")
+    @RequestMapping(method = RequestMethod.POST, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     ResponseEntity<?> get_transaction(@RequestBody Transaction transaction) throws IOException {
-        List<JSONObject> jsonObjectList = new ArrayList<>();
-
-
         if (transaction.getId().length() != 64){
             logger.info("id: "+transaction.getId()+" status: "+HttpStatus.BAD_REQUEST.toString());
             return new ResponseEntity<>("", HttpStatus.BAD_REQUEST);
         }
+        return response(transaction.getId());
+    }
 
-        QueryBuilder transactionQueryBuilder = new BoolQueryBuilder().filter(QueryBuilders.boolQuery().minimumShouldMatch(1).should(QueryBuilders.matchQuery("id",transaction.getId())));
+    private ResponseEntity response(String id) throws IOException {
+        List<JSONObject> jsonObjectList = new ArrayList<>();
+        QueryBuilder transactionQueryBuilder = new BoolQueryBuilder().filter(QueryBuilders.boolQuery().minimumShouldMatch(1).
+                should(QueryBuilders.matchQuery("id",id)));
         SearchRequest transactionSearchRequest = new SearchRequest(get_transaction_index);
         SearchSourceBuilder transactionSearchSourceBuilder = new SearchSourceBuilder();
         transactionSearchSourceBuilder.query(transactionQueryBuilder);
         transactionSearchRequest.source(transactionSearchSourceBuilder);
 
-        QueryBuilder actionsQueryBuilder = new BoolQueryBuilder().filter(QueryBuilders.boolQuery().minimumShouldMatch(1).should(QueryBuilders.matchQuery("trx",transaction.getId())));
+        QueryBuilder actionsQueryBuilder = new BoolQueryBuilder().filter(QueryBuilders.boolQuery().minimumShouldMatch(1).
+                should(QueryBuilders.matchQuery("trx",id)));
         SearchRequest actionsSearchRequest = new SearchRequest(get_actions_index);
         SearchSourceBuilder actionsSearchSourceBuilder = new SearchSourceBuilder();
         actionsSearchSourceBuilder.size(90);
@@ -81,11 +91,9 @@ public class GetTransaction {
         MultiSearchResponse.Item[] multiSearchResponse = elasticSearchClient.getElasticsearchClient().msearch(multiSearchRequest, RequestOptions.DEFAULT).getResponses();
 
         if ( multiSearchResponse[0].getResponse().getHits().getTotalHits().value == 0){
-            logger.info("id: "+transaction.getId()+" status: "+HttpStatus.NOT_FOUND.toString());
-
+            logger.info("id: "+id+" status: "+HttpStatus.NOT_FOUND.toString());
             return new ResponseEntity<>("", HttpStatus.NOT_FOUND);
         }
-
         JSONObject jsonObjectTransaction = new JSONObject(multiSearchResponse[0].getResponse().getHits().getAt(0).getSourceAsString());
 
         for (SearchHit hit : multiSearchResponse[1].getResponse().getHits()) {
@@ -96,10 +104,12 @@ public class GetTransaction {
             jsonObjectActions.remove("trx");
             jsonObjectList.add(jsonObjectActions);
         }
-
         jsonObjectTransaction.getJSONObject("trace").put("action_traces",jsonObjectList);
-        logger.info("id: "+transaction.getId()+" status: "+HttpStatus.OK.toString());
+        logger.info("id: "+id+" status: "+HttpStatus.OK.toString());
 
         return new ResponseEntity<>(jsonObjectTransaction.toString(), HttpStatus.OK);
+
     }
+
+
 }

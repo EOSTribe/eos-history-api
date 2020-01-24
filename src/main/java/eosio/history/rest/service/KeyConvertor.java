@@ -1,4 +1,4 @@
-package eosio.history.rest;
+package eosio.history.rest.service;
 
 import one.block.eosiojava.error.utilities.EOSFormatterError;
 import one.block.eosiojava.utilities.EOSFormatter;
