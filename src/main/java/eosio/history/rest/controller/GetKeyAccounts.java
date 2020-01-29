@@ -75,6 +75,7 @@ public class GetKeyAccounts {
         response.put("query_time", searchResponse.getTook().getMillis()+"ms");
         if (searchHits.getTotalHits().value == 0){
             logger.info("Reuqest: "+key.getPublic_key()+" response: "+HttpStatus.NOT_FOUND +" query_time: "+searchResponse.getTook().millis()+"ms ");
+            response.put("account_names", new JSONArray());
             return new ResponseEntity<>(response.toString(), HttpStatus.NOT_FOUND);
         }
         for (SearchHit hit : searchHits) {
@@ -85,10 +86,10 @@ public class GetKeyAccounts {
             }catch (JSONException jse){
                 logger.error(jse.getMessage());
                 logger.info("Reuqest: "+key.getPublic_key()+" response: "+HttpStatus.NOT_FOUND +" query_time: "+searchResponse.getTook().millis()+"ms ");
-                return new ResponseEntity<>(response.toString(), HttpStatus.NOT_FOUND);
-            }
+                response.put("account_names", new JSONArray());
+                return new ResponseEntity<>(response.toString(), HttpStatus.NOT_FOUND);            }
         }
-        response.put("accounts",accounts);
+        response.put("account_names",accounts);
         logger.info("Reuqest: "+key.getPublic_key()+" response: "+HttpStatus.OK +" query_time: "+searchResponse.getTook().millis()+"ms ");
         return new ResponseEntity<>(response.toString(), HttpStatus.OK);
     }
