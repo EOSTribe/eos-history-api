@@ -34,7 +34,6 @@ import java.util.HashSet;
 import java.util.List;
 
 @RestController
-//@RequestMapping("/v1/history/get_actions")
 public class GetActions {
     private static final transient Logger logger = LoggerFactory.getLogger(GetActions.class);
 
