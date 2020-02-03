@@ -23,9 +23,9 @@ import static org.junit.Assert.*;
 
 import java.io.IOException;
 
-@RunWith(SpringRunner.class)
-@SpringBootTest
-@WebAppConfiguration
+//@RunWith(SpringRunner.class)
+//@SpringBootTest
+//@WebAppConfiguration
 public class GetTransactionQuery {
 
     @Autowired
@@ -44,17 +44,17 @@ public void init() throws IOException {
    }
    @Test
    public void getTransaction() throws IOException {
-       QueryBuilder queryBuilder = new BoolQueryBuilder().filter(QueryBuilders.boolQuery().minimumShouldMatch(1).should(QueryBuilders.matchQuery("id",transactionId)));
-       SearchRequest searchRequest = new SearchRequest(get_transaction_index);
-       SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();
-       searchSourceBuilder.query(queryBuilder);
-       searchRequest.source(searchSourceBuilder);
-       SearchResponse searchResponse = elasticSearchClient.getElasticsearchClient().search(searchRequest, RequestOptions.DEFAULT);
-       SearchHits hits = searchResponse.getHits();
-       for (SearchHit hit : hits) {
-           // do something with the SearchHit
-           System.out.println(hit.getSourceAsString());
-       }
+//       QueryBuilder queryBuilder = new BoolQueryBuilder().filter(QueryBuilders.boolQuery().minimumShouldMatch(1).should(QueryBuilders.matchQuery("id",transactionId)));
+//       SearchRequest searchRequest = new SearchRequest(get_transaction_index);
+//       SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();
+//       searchSourceBuilder.query(queryBuilder);
+//       searchRequest.source(searchSourceBuilder);
+//       SearchResponse searchResponse = elasticSearchClient.getElasticsearchClient().search(searchRequest, RequestOptions.DEFAULT);
+//       SearchHits hits = searchResponse.getHits();
+//       for (SearchHit hit : hits) {
+//           // do something with the SearchHit
+//           System.out.println(hit.getSourceAsString());
+//       }
 
 
    }

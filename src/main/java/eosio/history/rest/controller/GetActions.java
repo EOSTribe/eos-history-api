@@ -210,6 +210,10 @@ public class GetActions {
             method = RequestMethod.GET,
             produces = MediaType.APPLICATION_JSON_VALUE)
     ResponseEntity<?> get_actions(@RequestParam("limit") int limit) throws IOException{
+        if ((limit >100) || (limit< 1) ){
+            logger.warn("Limit: "+limit+" response status: "+HttpStatus.NOT_ACCEPTABLE );
+            return new ResponseEntity<>("The correct limit value is from 1 to 100", HttpStatus.NOT_ACCEPTABLE);
+        }
         JSONObject response = new JSONObject();
         JSONArray actions = new JSONArray();
         SearchRequest searchRequest = new SearchRequest(actionsIndex);
@@ -217,10 +221,13 @@ public class GetActions {
         searchSourceBuilder.sort("receipt.global_sequence", SortOrder.DESC);
         searchSourceBuilder.size(limit);
         searchRequest.source(searchSourceBuilder);
-
         SearchResponse searchResponse = elasticSearchClient.getElasticsearchClient().search(searchRequest, RequestOptions.DEFAULT);
         SearchHits searchHits = searchResponse.getHits();
         response.put("query_time", searchResponse.getTook().getMillis()+"ms");
+        if (searchHits.getTotalHits().value == 0){
+            response.put("actions",actions);
+            return new ResponseEntity<>(response.toString(), HttpStatus.NOT_FOUND);
+        }
         for (SearchHit hit : searchHits) {
             JSONObject action = new JSONObject(hit.getSourceAsString());
             JSONObject jsonObjectData = null;

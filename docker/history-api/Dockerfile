@@ -4,5 +4,5 @@ FROM openjdk:8-jre-alpine
 #    cd websocket-endpoint && \
 #    git checkout  elastic-publisher && \
 #    gradle clean build
-COPY build/eosio-history-api-0.1.20.jar /usr/app/app.jar
+COPY build/eosio-history-api-0.1.21.jar /usr/app/app.jar
 ENTRYPOINT ["java", "-jar", "/usr/app/app.jar"]
