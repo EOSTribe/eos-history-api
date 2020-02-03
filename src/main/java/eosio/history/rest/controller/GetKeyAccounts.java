@@ -28,7 +28,6 @@ import org.springframework.web.bind.annotation.*;
 import java.io.IOException;
 
 @RestController
-@RequestMapping("/v1/history/get_key_accounts")
 public class GetKeyAccounts {
     private static final transient Logger logger = LoggerFactory.getLogger(GetKeyAccounts.class);
 
@@ -50,13 +49,23 @@ public class GetKeyAccounts {
     }
 
     @CrossOrigin
-    @RequestMapping(method = RequestMethod.POST, consumes = "application/json", produces = "application/json")
+    @RequestMapping(value = {"/v1/history/get_key_accounts", "/v2/get_key_accounts"},
+            method = RequestMethod.POST, consumes = "application/json", produces = "application/json")
     ResponseEntity<?> get_actions(@RequestBody Key key) throws IOException, EOSFormatterError {
         JSONArray accounts = new JSONArray();
         JSONObject response = new JSONObject();
-        String publicKeyK1;
+        String publicKeyK1 = null;
         if (key.getPublic_key().substring(0,3).equals("EOS")){
-            publicKeyK1 = keyConvertor.fromLegacyToK1PublicKey(key.getPublic_key());
+            try {
+                publicKeyK1 = keyConvertor.fromLegacyToK1PublicKey(key.getPublic_key());
+            }catch (EOSFormatterError eosFormatterError){
+                response.put("account_names", new JSONArray());
+                logger.warn("Reuqest: "+key.getPublic_key()+" response: "+HttpStatus.NOT_FOUND +
+
+                        " message: "+eosFormatterError.getMessage());
+                return new ResponseEntity<>(response.toString(), HttpStatus.NOT_FOUND);
+            }
+
         }else {
             publicKeyK1 = key.getPublic_key();
         }
