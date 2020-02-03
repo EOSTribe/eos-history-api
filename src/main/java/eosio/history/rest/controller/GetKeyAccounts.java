@@ -49,7 +49,7 @@ public class GetKeyAccounts {
     }
 
     @CrossOrigin
-    @RequestMapping(value = {"/v1/history/get_key_accounts", "/v2/get_key_accounts"},
+    @RequestMapping(value = {"/v1/history/get_key_accounts", "/v2/state/get_key_accounts"},
             method = RequestMethod.POST, consumes = "application/json", produces = "application/json")
     ResponseEntity<?> get_actions(@RequestBody Key key) throws IOException, EOSFormatterError {
         JSONArray accounts = new JSONArray();
@@ -82,6 +82,7 @@ public class GetKeyAccounts {
         SearchResponse searchResponse = elasticSearchClient.getElasticsearchClient().search(searchRequest, RequestOptions.DEFAULT);
         SearchHits searchHits = searchResponse.getHits();
         response.put("query_time", searchResponse.getTook().getMillis()+"ms");
+
         if (searchHits.getTotalHits().value == 0){
             logger.info("Reuqest: "+key.getPublic_key()+" response: "+HttpStatus.NOT_FOUND +" query_time: "+searchResponse.getTook().millis()+"ms ");
             response.put("account_names", new JSONArray());
